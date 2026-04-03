@@ -55,9 +55,9 @@ export default function CarDetailPage() {
   
   const vinClubRates: Record<string, number> = {
     "Không có hạng VinClub": 0,
-    "Hạng Gold (Giảm 1%)": 1,
-    "Hạng Platinum (Giảm 2%)": 2,
-    "Hạng Diamond (Giảm 3%)": 3,
+    "Hạng Gold (Giảm 0.5%)": 0.5,
+    "Hạng Platinum (Giảm 1%)": 1,
+    "Hạng Diamond (Giảm 1.5%)": 1.5,
   };
   const vinClubDiscount = (price * (vinClubRates[vinClub] || 0)) / 100;
 
@@ -227,9 +227,9 @@ export default function CarDetailPage() {
                   <label className="block text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Hạng thành viên VinClub</label>
                   <select value={vinClub} onChange={e => setVinClub(e.target.value)} className="w-full bg-white border-2 border-gray-100 text-gray-800 rounded-xl p-4 font-bold outline-none focus:border-[#1464f4] appearance-none">
                     <option>Không có hạng VinClub</option>
-                    <option>Hạng Gold (Giảm 1%)</option>
-                    <option>Hạng Platinum (Giảm 2%)</option>
-                    <option>Hạng Diamond (Giảm 3%)</option>
+                    <option>Hạng Gold (Giảm 0.5%)</option>
+                    <option>Hạng Platinum (Giảm 1%)</option>
+                    <option>Hạng Diamond (Giảm 1.5%)</option>
                   </select>
                </div>
                <div>

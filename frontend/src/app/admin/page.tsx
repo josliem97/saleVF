@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [loaiBienSo, setLoaiBienSo] = useState("Biển trắng");
   const [custName, setCustName] = useState("");
   const [custPhone, setCustPhone] = useState("");
+  const [vinClub, setVinClub] = useState("Không có hạng VinClub");
   const [lanBanhRes, setLanBanhRes] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
   // --- Quote Calculation Logic ---
   const selectedCar = useMemo(() => cars.find(c => c.id === Number(selectedCarId)), [cars, selectedCarId]);
   const selectedVersion = useMemo(() => selectedCar?.versions.find((v: any) => v.name === selectedVersionName), [selectedCar, selectedVersionName]);
-  
+
   const basePrice = selectedVersion?.price || 0;
   let promoDiscount = 0;
   selectedPolIds.forEach(id => {
@@ -138,7 +139,14 @@ export default function AdminDashboard() {
     }
   });
 
-  const finalPriceBeforeFees = basePrice - promoDiscount - sellerDiscount;
+  const vinClubRates: Record<string, number> = {
+    "Không có hạng VinClub": 0,
+    "Hạng Gold (Giảm 0.5%)": 0.5,
+    "Hạng Platinum (Giảm 1%)": 1,
+    "Hạng Diamond (Giảm 1.5%)": 1.5,
+  };
+  const vinClubDiscount = (basePrice * (vinClubRates[vinClub] || 0)) / 100;
+  const finalPriceBeforeFees = basePrice - promoDiscount - sellerDiscount - vinClubDiscount;
   const phiDuongBo = loaiBienSo.includes("vàng") ? 2160000 : 1560000;
 
   useEffect(() => {
@@ -279,7 +287,13 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Khu vực & Biển số</label>
+                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">VinClub & Khu vực</label>
+                         <select value={vinClub} onChange={e => setVinClub(e.target.value)} className="w-full border-2 p-3 rounded-xl mb-3 font-bold text-blue-600">
+                            <option>Không có hạng VinClub</option>
+                            <option>Hạng Gold (Giảm 0.5%)</option>
+                            <option>Hạng Platinum (Giảm 1%)</option>
+                            <option>Hạng Diamond (Giảm 1.5%)</option>
+                         </select>
                          <select value={khuVuc} onChange={e => setKhuVuc(e.target.value)} className="w-full border-2 p-3 rounded-xl mb-3"><option value="I">Khu vực I (HN, HCM)</option><option value="II">Khu vực II (Tỉnh)</option></select>
                          <select value={loaiBienSo} onChange={e => setLoaiBienSo(e.target.value)} className="w-full border-2 p-3 rounded-xl"><option>Biển trắng</option><option>Biển vàng</option></select>
                       </div>
@@ -343,6 +357,12 @@ export default function AdminDashboard() {
                                <span className="text-gray-500 font-medium font-bold text-red-650">Chiết khấu Seller:</span>
                                <span className="font-bold text-red-600">-{formatPrice(sellerDiscount)}</span>
                             </div>
+                            {vinClubDiscount > 0 && (
+                               <div className="flex justify-between pb-3 border-b border-dashed">
+                                 <span className="text-gray-500 font-medium font-bold text-blue-500">VinClub ({vinClub}):</span>
+                                 <span className="font-bold text-blue-500">-{formatPrice(vinClubDiscount)}</span>
+                               </div>
+                             )}
                             <div className="flex justify-between py-4 bg-blue-50/50 px-4 rounded-xl">
                                <span className="font-black text-[#1464f4]">GIÁ XE SAU GIẢM:</span>
                                <span className="font-black text-[#1464f4] text-xl">{formatPrice(finalPriceBeforeFees)}</span>
