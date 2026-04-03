@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a1128;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Inter", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Thêm animation đẹp mắt cho modal */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media print {
+  header, footer, .no-print, button, select, input, .zalo-call-float {
+    display: none !important;
+  }
+  
+  body {
+    background-color: white !important;
+    padding: 0 !important;
+    margin: 0.5in !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .quotation-header {
+    border-bottom: 3px solid #1464f4;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .quotation-title {
+    font-size: 28pt;
+    font-weight: 900;
+    color: #0a1128;
+    letter-spacing: -2px;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  th, td {
+    border: 1px solid #e5e7eb !important;
+    padding: 12px !important;
+  }
+
+  .text-[#1464f4] {
+    color: #1464f4 !important;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+.print-only {
+  display: none;
+}
