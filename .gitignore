@@ -1,0 +1,23 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+requirements.txt.bak
+
+# Database
+*.db
+*.sqlite3
+
+# Environment
+.env
+
+# Next.js (Local)
+frontend/.next/
+frontend/node_modules/
+
+# Logs
+*.log
