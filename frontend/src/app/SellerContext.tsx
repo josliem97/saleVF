@@ -1,6 +1,6 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { fetchSellerByDomain, getCurrentDomain, Seller } from "./seller";
+import { fetchSellerByDomain, getCurrentDomain, Seller } from "../lib/seller";
 
 interface SellerContextType {
     seller: Seller | null;

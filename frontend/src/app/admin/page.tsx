@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { API_BASE_URL } from '@/lib/api';
 import { useSeller } from '../SellerContext';
