@@ -26,6 +26,8 @@ engine_pg = create_engine(POSTGRES_URL)
 SessionSqlite = sessionmaker(bind=engine_sqlite)
 SessionPg = sessionmaker(bind=engine_pg)
 
+import json
+
 def migrate():
     print("--- Bat dau qua trinh chuyen doi du lieu sang Supabase ---")
     
@@ -38,24 +40,41 @@ def migrate():
     db_pg = SessionPg()
 
     try:
+        # Clear existing data on Supabase to ensure clean migration
+        from models import Car, Policy, Lead
+        print("INFO: Dang lam sach du lieu cu tren Supabase...")
+        db_pg.query(Policy).delete()
+        db_pg.query(Car).delete()
+        db_pg.commit()
+
         cars = db_lite.execute(sqlalchemy.text("SELECT * FROM cars")).fetchall()
         print(f"INFO: Tim thay {len(cars)} xe. Dang sao chep...")
         for c in cars:
             # Note: We use raw sql or ORM. Since we have models, let's use ORM for safety
             from models import Car
-            # Check if exists
-            exists = db_pg.query(Car).filter(Car.id == c.id).first()
-            if not exists:
-                new_car = Car(
-                    id=c.id, 
-                    name=c.name, 
-                    model=c.model, 
-                    segment=c.segment, 
-                    image_url=c.image_url,
-                    versions=c.versions, # JSON field
-                    specs=c.specs # JSON field
-                )
-                db_pg.add(new_car)
+            
+            # SQLite might return JSON as string, we need to convert to Python objects for PG JSON column
+            try:
+                versions_obj = json.loads(c.versions) if isinstance(c.versions, str) else c.versions
+            except:
+                versions_obj = c.versions
+
+            try:
+                specs_obj = json.loads(c.specs) if isinstance(c.specs, str) else c.specs
+            except:
+                specs_obj = c.specs
+
+            new_car = Car(
+                id=c.id, 
+                name=c.name, 
+                model=c.model, 
+                slug=getattr(c, 'slug', f"car-{c.id}"), 
+                segment=c.segment, 
+                image_url=c.image_url,
+                versions=versions_obj,
+                specs=specs_obj
+            )
+            db_pg.add(new_car)
         
         db_pg.commit()
         print("OK: Da sao chep xong danh muc Xe.")

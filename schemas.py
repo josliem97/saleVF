@@ -6,7 +6,7 @@ from datetime import date
 class CarBase(BaseModel):
     name: str
     model: str
-    slug: str
+    slug: Optional[str] = None
     segment: str
     image_url: str
     versions: List[Dict[str, Any]] # [{"name": "Eco", "price": 1200000000}, ...]
