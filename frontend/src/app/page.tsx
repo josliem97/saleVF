@@ -4,6 +4,7 @@ import { CarCard } from '../components/car/CarCard';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { API_BASE_URL } from '@/lib/api';
+import { useSeller } from './SellerContext';
 
 export default function Home() {
   const [cars, setCars] = useState<any[]>([])
@@ -12,17 +13,21 @@ export default function Home() {
   const [segment, setSegment] = useState("all")
   const [sort, setSort] = useState("price-asc")
 
+  const { seller, loading: sellerLoading } = useSeller();
+
   useEffect(() => {
+    if (sellerLoading) return;
     const fetchCars = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/cars/`);
+        const url = seller?.id ? `${API_BASE_URL}/cars/?seller_id=${seller.id}` : `${API_BASE_URL}/cars/`;
+        const res = await fetch(url);
         const data = await res.json();
         setCars(data);
       } catch (err) { console.error("Error fetching cars:", err); }
       setLoading(false);
     }
     fetchCars();
-  }, []);
+  }, [seller, sellerLoading]);
 
   const filteredCars = cars.filter(car => {
     if (!car) return false;

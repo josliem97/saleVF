@@ -2,8 +2,35 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import date
 
+# --- Schema cho Người bán (Seller/Agent) ---
+class SellerBase(BaseModel):
+    username: str
+    domain: str
+    name: str
+    phone: str
+    showroom: str
+    google_ads_id: Optional[str] = None
+    is_active: bool = True
+
+class SellerCreate(SellerBase):
+    password: str
+
+class SellerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    showroom: Optional[str] = None
+    google_ads_id: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class SellerResponse(SellerBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Schema cho Xe (Car) ---
 class CarBase(BaseModel):
+    seller_id: int
     name: str
     model: str
     slug: Optional[str] = None
@@ -26,6 +53,7 @@ class CarResponse(CarBase):
 
 # --- Schema cho Ưu đãi (Policy) ---
 class PolicyBase(BaseModel):
+    seller_id: int
     car_id: Optional[int] = None
     name: str
     discount_amount: float = 0.0
@@ -83,6 +111,7 @@ class TraGopResponse(BaseModel):
 
 # --- Schema cho CRM Khách hàng (Lead) ---
 class LeadBase(BaseModel):
+    seller_id: int
     name: str
     phone: str
     address: str

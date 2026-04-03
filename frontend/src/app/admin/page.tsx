@@ -1,6 +1,6 @@
-"use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { API_BASE_URL } from '@/lib/api';
+import { useSeller } from '../SellerContext';
 
 type Tab = 'leads' | 'cars' | 'policies' | 'quote';
 
@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [vinClub, setVinClub] = useState("Không có hạng VinClub");
   const [lanBanhRes, setLanBanhRes] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const { seller, loading: sellerLoading } = useSeller();
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -45,9 +46,10 @@ export default function AdminDashboard() {
 
   // --- API CALLS ---
   const fetchLeads = async () => {
+    if (!seller) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/leads/`);
+      const res = await fetch(`${API_BASE_URL}/leads/?seller_id=${seller.id}`);
       const data = await res.json();
       setLeads(data);
     } catch (error) { console.error(error); }
@@ -55,9 +57,10 @@ export default function AdminDashboard() {
   };
 
   const fetchCars = async () => {
+    if (!seller) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/cars/`);
+      const res = await fetch(`${API_BASE_URL}/cars/?seller_id=${seller.id}`);
       const data = await res.json();
       setCars(data);
       if (data.length > 0 && !selectedCarId) {
@@ -69,9 +72,10 @@ export default function AdminDashboard() {
   };
 
   const fetchPolicies = async () => {
+    if (!seller) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/policies/`);
+      const res = await fetch(`${API_BASE_URL}/policies/?seller_id=${seller.id}`);
       const data = await res.json();
       setPolicies(data);
     } catch (error) { console.error(error); }
@@ -82,10 +86,11 @@ export default function AdminDashboard() {
     try {
       const method = carData.id ? 'PUT' : 'POST';
       const url = carData.id ? `${API_BASE_URL}/cars/${carData.id}` : `${API_BASE_URL}/cars/`;
+      const payload = { ...carData, seller_id: seller?.id };
       await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(carData)
+        body: JSON.stringify(payload)
       });
       setEditingCar(null);
       fetchCars();
@@ -101,6 +106,7 @@ export default function AdminDashboard() {
   const handleAddPolicy = async () => {
     try {
       const payload = {
+        seller_id: seller?.id,
         car_id: null,
         name: newPolicy.name,
         discount_amount: newPolicy.type === 'fixed' ? newPolicy.value : 0,
@@ -176,9 +182,30 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-[#0a1128] flex items-center justify-center p-4">
         <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-sm">
           <h2 className="text-2xl font-black text-center mb-8 text-[#0a1128]">ADMIN LOGIN</h2>
-          <input type="password" id="pass" placeholder="Password (1234)" className="w-full border-2 p-4 rounded-xl mb-4 text-center" />
-          <button className="w-full bg-[#1464f4] text-white p-4 rounded-xl font-bold" onClick={() => {
-            if ((document.getElementById('pass') as HTMLInputElement).value === '1234') setIsLoggedIn(true);
+          <input type="text" id="user" placeholder="Tên đăng nhập" className="w-full border-2 p-4 rounded-xl mb-4 text-center text-gray-900" />
+          <input type="password" id="pass" placeholder="Mật khẩu" className="w-full border-2 p-4 rounded-xl mb-4 text-center text-gray-900" />
+          <button className="w-full bg-[#1464f4] text-white p-4 rounded-xl font-bold" onClick={async () => {
+            const userInput = (document.getElementById('user') as HTMLInputElement).value;
+            const passInput = (document.getElementById('pass') as HTMLInputElement).value;
+            
+            // Master back-door for Superadmin (optional)
+            if (passInput === '1234') {
+                setIsLoggedIn(true);
+                return;
+            }
+
+            try {
+              const res = await fetch(`${API_BASE_URL}/sellers/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: userInput, password: passInput })
+              });
+              if (res.ok) {
+                setIsLoggedIn(true);
+              } else {
+                alert("Thông tin đăng nhập không chính xác.");
+              }
+            } catch (error) { alert("Lỗi kết nối server."); }
           }}>Đăng nhập</button>
         </div>
       </div>
@@ -228,9 +255,9 @@ export default function AdminDashboard() {
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-xl text-[#1464f4]">Phạm Đức Liêm</p>
-                  <p className="text-sm font-bold text-gray-500">Vinfast Thọ Huyền Duy Tiên</p>
-                  <p className="text-sm font-bold text-gray-500">Sđt: 0981 242 068</p>
+                  <p className="font-black text-xl text-[#1464f4]">{seller?.name || "Phạm Đức Liêm"}</p>
+                  <p className="text-sm font-bold text-gray-500">{seller?.showroom || "Vinfast Thọ Huyền Duy Tiên"}</p>
+                  <p className="text-sm font-bold text-gray-500">Sđt: {seller?.phone || "0981 242 068"}</p>
                 </div>
               </div>
            </div>
@@ -328,9 +355,9 @@ export default function AdminDashboard() {
                                )}
                              </div>
                             <div className="text-right">
-                              <p className="font-black text-xl text-[#1464f4]">Phạm Đức Liêm</p>
-                              <p className="text-sm font-bold text-gray-500">Vinfast Thọ Huyền Duy Tiên</p>
-                              <p className="text-sm font-bold text-gray-500">Sđt: 0981 242 068</p>
+                              <p className="font-black text-xl text-[#1464f4]">{seller?.name || "Phạm Đức Liêm"}</p>
+                              <p className="text-sm font-bold text-gray-500">{seller?.showroom || "Vinfast Thọ Huyền Duy Tiên"}</p>
+                              <p className="text-sm font-bold text-gray-500">Sđt: {seller?.phone || "0981 242 068"}</p>
                             </div>
                           </div>
                         </div>

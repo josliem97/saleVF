@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import LeadForm from "@/components/LeadForm";
 import { API_BASE_URL } from "@/lib/api";
+import { useSeller } from "../../SellerContext";
 
 export default function CarDetailPage() {
   const params = useParams();
@@ -28,18 +29,23 @@ export default function CarDetailPage() {
     window.print();
   };
 
+  const { seller, loading: sellerLoading } = useSeller();
+
   useEffect(() => {
+    if (sellerLoading) return;
     const fetchData = async () => {
       if (!slug) return;
       try {
-        const carRes = await fetch(`${API_BASE_URL}/cars/slug/${slug}`);
+        const carUrl = seller?.id ? `${API_BASE_URL}/cars/slug/${slug}?seller_id=${seller.id}` : `${API_BASE_URL}/cars/slug/${slug}`;
+        const carRes = await fetch(carUrl);
         if (carRes.ok) {
           const carData = await carRes.json();
           setCar(carData);
           setSelectedVersion(carData.versions[0]);
         }
 
-        const polRes = await fetch(`${API_BASE_URL}/policies/`);
+        const polUrl = seller?.id ? `${API_BASE_URL}/policies/?seller_id=${seller.id}` : `${API_BASE_URL}/policies/`;
+        const polRes = await fetch(polUrl);
         if (polRes.ok) {
           const polData = await polRes.json();
           setPolicies(polData);
@@ -48,7 +54,7 @@ export default function CarDetailPage() {
       setLoading(false);
     };
     fetchData();
-  }, [slug]);
+  }, [slug, seller, sellerLoading]);
 
   // Derived Values
   const price = selectedVersion?.price || 0;
@@ -196,9 +202,9 @@ export default function CarDetailPage() {
               )}
             </div>
             <div className="text-right">
-              <p className="font-black text-lg text-[#1464f4]">Phạm Đức Liêm</p>
-              <p className="text-[10px] font-bold text-gray-500">Vinfast Thọ Huyền Duy Tiên</p>
-              <p className="text-[10px] font-bold text-gray-500">Sđt: 0981 242 068</p>
+              <p className="font-black text-lg text-[#1464f4]">{seller?.name || "Phạm Đức Liêm"}</p>
+              <p className="text-[10px] font-bold text-gray-500">{seller?.showroom || "Vinfast Thọ Huyền Duy Tiên"}</p>
+              <p className="text-[10px] font-bold text-gray-500">Sđt: {seller?.phone || "0981 242 068"}</p>
             </div>
           </div>
         </div>

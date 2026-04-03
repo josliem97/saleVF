@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import models
 import schemas
@@ -31,6 +31,59 @@ def read_root():
     return {"message": "Welcome to VinFast Sale System API. Use /docs to view Swagger UI."}
 
 # ================================
+# QUẢN LÝ NGƯỜI BÁN (SELLERS)
+# ================================
+@app.post("/sellers/", response_model=schemas.SellerResponse, tags=["Sellers"])
+def create_seller(seller: schemas.SellerCreate, db: Session = Depends(get_db)):
+    db_seller = crud.get_seller_by_username(db, username=seller.username)
+    if db_seller:
+        raise HTTPException(status_code=400, detail="Username đã tồn tại.")
+    return crud.create_seller(db=db, seller=seller)
+
+@app.get("/sellers/", response_model=List[schemas.SellerResponse], tags=["Sellers"])
+def read_sellers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_sellers(db, skip=skip, limit=limit)
+
+@app.put("/sellers/{seller_id}", response_model=schemas.SellerResponse, tags=["Sellers"])
+def update_seller(seller_id: int, seller: schemas.SellerUpdate, db: Session = Depends(get_db)):
+    db_seller = crud.update_seller(db, seller_id=seller_id, seller=seller)
+    if db_seller is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người bán.")
+    return db_seller
+
+@app.delete("/sellers/{seller_id}", response_model=schemas.SellerResponse, tags=["Sellers"])
+def delete_seller(seller_id: int, db: Session = Depends(get_db)):
+    db_seller = crud.delete_seller(db, seller_id=seller_id)
+    if db_seller is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người bán.")
+    return db_seller
+
+@app.post("/sellers/login", tags=["Sellers"])
+def seller_login(data: dict, db: Session = Depends(get_db)):
+    username = data.get("username")
+    password = data.get("password")
+    db_seller = crud.get_seller_by_username(db, username=username)
+    if db_seller and db_seller.password == password:
+        return db_seller
+    raise HTTPException(status_code=401, detail="Sai thông tin đăng nhập.")
+
+@app.get("/sellers/by-domain/{domain}", response_model=schemas.SellerResponse, tags=["Sellers"])
+def read_seller_by_domain(domain: str, db: Session = Depends(get_db)):
+    # Bỏ tiền tố http/https và www nếu có
+    clean_domain = domain.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
+    db_seller = crud.get_seller_by_domain(db, domain=clean_domain)
+    if db_seller is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người bán cho tên miền này.")
+    return db_seller
+
+@app.post("/sellers/{seller_id}/init-data", tags=["Sellers"])
+def init_seller_data(seller_id: int, template_id: int = 1, db: Session = Depends(get_db)):
+    success = crud.init_seller_cars(db, seller_id=seller_id, template_seller_id=template_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Lỗi khởi tạo dữ liệu.")
+    return {"message": "Đã khởi tạo dữ liệu mặc định thành công."}
+
+# ================================
 # QUẢN LÝ XE (CARS)
 # ================================
 @app.post("/cars/", response_model=schemas.CarResponse, tags=["Cars"])
@@ -38,8 +91,8 @@ def create_car(car: schemas.CarCreate, db: Session = Depends(get_db)):
     return crud.create_car(db=db, car=car)
 
 @app.get("/cars/", response_model=List[schemas.CarResponse], tags=["Cars"])
-def read_cars(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    cars = crud.get_cars(db, skip=skip, limit=limit)
+def read_cars(seller_id: Optional[int] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    cars = crud.get_cars(db, seller_id=seller_id, skip=skip, limit=limit)
     return cars
 
 @app.get("/cars/{car_id}", response_model=schemas.CarResponse, tags=["Cars"])
@@ -50,8 +103,8 @@ def read_car(car_id: int, db: Session = Depends(get_db)):
     return db_car
 
 @app.get("/cars/slug/{slug}", response_model=schemas.CarResponse, tags=["Cars"])
-def read_car_by_slug(slug: str, db: Session = Depends(get_db)):
-    db_car = crud.get_car_by_slug(db, slug=slug)
+def read_car_by_slug(slug: str, seller_id: Optional[int] = None, db: Session = Depends(get_db)):
+    db_car = crud.get_car_by_slug(db, slug=slug, seller_id=seller_id)
     if db_car is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy thông tin xe qua slug.")
     return db_car
@@ -78,8 +131,8 @@ def create_policy(policy: schemas.PolicyCreate, db: Session = Depends(get_db)):
     return crud.create_policy(db=db, policy=policy)
 
 @app.get("/policies/", response_model=List[schemas.PolicyResponse], tags=["Policies"])
-def read_policies(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    policies = crud.get_policies(db, skip=skip, limit=limit)
+def read_policies(seller_id: Optional[int] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    policies = crud.get_policies(db, seller_id=seller_id, skip=skip, limit=limit)
     return policies
 
 @app.get("/policies/{policy_id}", response_model=schemas.PolicyResponse, tags=["Policies"])
@@ -134,8 +187,8 @@ def create_lead(lead: schemas.LeadCreate, db: Session = Depends(get_db)):
     return crud.create_lead(db=db, lead=lead)
 
 @app.get("/leads/", response_model=List[schemas.LeadResponse], tags=["Leads"])
-def read_leads(skip: int = 0, limit: int = 200, db: Session = Depends(get_db)):
-    return crud.get_leads(db, skip=skip, limit=limit)
+def read_leads(seller_id: Optional[int] = None, skip: int = 0, limit: int = 200, db: Session = Depends(get_db)):
+    return crud.get_leads(db, seller_id=seller_id, skip=skip, limit=limit)
 
 @app.put("/leads/{lead_id}/status", response_model=schemas.LeadResponse, tags=["Leads"])
 def update_lead_status(lead_id: int, status: schemas.LeadUpdate, db: Session = Depends(get_db)):
