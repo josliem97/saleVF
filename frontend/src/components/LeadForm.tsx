@@ -1,29 +1,53 @@
 "use client"
-import React, { useState } from 'react';
-import { MOCK_CARS } from '../data/mockCars';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/lib/api';
 
-export default function LeadForm({ defaultCarId = "vf3-eco" }: { defaultCarId?: string }) {
+export default function LeadForm({ defaultCarId = "" }: { defaultCarId?: string }) {
+  const [cars, setCars] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
-    interested_car_id: defaultCarId
+    interested_car_id: defaultCarId || ""
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/cars/`);
+        if (res.ok) {
+          const data = await res.json();
+          setCars(data);
+          if (!formData.interested_car_id && data.length > 0) {
+            setFormData(prev => ({ ...prev, interested_car_id: data[0].id }));
+          }
+        }
+      } catch (err) { console.error(err); }
+    };
+    fetchCars();
+  }, []);
+
+  useEffect(() => {
+    if (defaultCarId) {
+       setFormData(prev => ({ ...prev, interested_car_id: defaultCarId }));
+    }
+  }, [defaultCarId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/leads/", {
+      const res = await fetch(`${API_BASE_URL}/leads/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
       if (res.ok) setSubmitted(true);
+      else alert("Gửi thất bại. Vui lòng kiểm tra lại thông tin.");
     } catch (error) {
-      alert("Lỗi khi gửi thông tin hẹn lịch! Bạn có bật server Backend ở cổng 8000 chưa?");
+      alert("Lỗi khi gửi thông tin! Vui lòng thử lại sau.");
     }
     setLoading(false);
   };
@@ -63,7 +87,7 @@ export default function LeadForm({ defaultCarId = "vf3-eco" }: { defaultCarId?: 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Dòng xe quan tâm nhất</label>
             <select className="w-full bg-gray-50 border border-gray-200 text-lg rounded-xl p-4 focus:ring-2 focus:ring-[#1464f4]/20 focus:border-[#1464f4] outline-none font-semibold text-[#1464f4]" value={formData.interested_car_id} onChange={e => setFormData({...formData, interested_car_id: e.target.value})}>
-              {MOCK_CARS.map(c => <option key={c.id} value={c.id}>{c.name} {c.versions[0]?.name || ''}</option>)}
+              {cars.map(c => <option key={c.id} value={c.id}>{c.name} {c.versions[0]?.name || ''}</option>)}
             </select>
           </div>
           <button disabled={loading} type="submit" className="w-full bg-[#1464f4] hover:bg-blue-700 text-white font-black tracking-wider py-5 rounded-xl text-lg transition-all shadow-[0_10px_20px_rgba(20,100,244,0.3)] hover:shadow-[0_15px_30px_rgba(20,100,244,0.4)] hover:-translate-y-1">
