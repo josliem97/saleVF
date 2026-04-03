@@ -26,12 +26,12 @@ class CarResponse(CarBase):
 
 # --- Schema cho Ưu đãi (Policy) ---
 class PolicyBase(BaseModel):
-    car_id: int
+    car_id: Optional[int] = None
     name: str
     discount_amount: float = 0.0
     voucher_value: float = 0.0
-    start_date: date
-    end_date: date
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
 class PolicyCreate(PolicyBase):
     pass
