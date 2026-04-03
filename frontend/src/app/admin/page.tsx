@@ -33,17 +33,18 @@ export default function AdminDashboard() {
   const { seller, loading: sellerLoading } = useSeller();
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !seller) return;
     fetchLeads();
     fetchCars();
     fetchPolicies();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, seller]);
 
   useEffect(() => {
+    if (!seller) return;
     if (activeTab === 'leads') fetchLeads();
     if (activeTab === 'cars') fetchCars();
     if (activeTab === 'policies') fetchPolicies();
-  }, [activeTab]);
+  }, [activeTab, seller]);
 
   // --- API CALLS ---
   const fetchLeads = async () => {
