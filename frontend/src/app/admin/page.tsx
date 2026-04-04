@@ -129,7 +129,10 @@ export default function AdminDashboard() {
       }
       setNewPolicy({ name: '', type: 'percent', value: 0 });
       fetchPolicies();
-    } catch (error) { alert("Lỗi kết nối khi thêm chính sách"); }
+    } catch (error: any) { 
+      console.error('Add policy error:', error, 'API_URL:', API_BASE_URL);
+      alert("Lỗi kết nối: " + (error?.message || String(error)) + " | URL: " + API_BASE_URL + "/policies/"); 
+    }
   };
 
   const handleSavePolicy = async () => {
