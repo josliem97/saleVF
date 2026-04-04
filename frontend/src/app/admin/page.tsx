@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   // Policies State
   const [policies, setPolicies] = useState<any[]>([]);
   const [newPolicy, setNewPolicy] = useState({ name: '', type: 'percent', value: 0 });
+  const [editingPolicy, setEditingPolicy] = useState<any>(null);
 
   // Quote Tool State
   const [selectedCarId, setSelectedCarId] = useState<string | number>("");
@@ -116,14 +117,46 @@ export default function AdminDashboard() {
         start_date: new Date().toISOString().split('T')[0],
         end_date: "2030-12-31"
       };
-      await fetch(`${API_BASE_URL}/policies/`, {
+      const res = await fetch(`${API_BASE_URL}/policies/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Lỗi thêm chính sách: " + (err?.detail || JSON.stringify(err)));
+        return;
+      }
       setNewPolicy({ name: '', type: 'percent', value: 0 });
       fetchPolicies();
-    } catch (error) { alert("Lỗi thêm chính sách"); }
+    } catch (error) { alert("Lỗi kết nối khi thêm chính sách"); }
+  };
+
+  const handleSavePolicy = async () => {
+    if (!editingPolicy) return;
+    try {
+      const payload = {
+        seller_id: seller?.id,
+        car_id: editingPolicy.car_id || null,
+        name: editingPolicy.name,
+        discount_amount: editingPolicy.discount_amount ?? 0,
+        voucher_value: editingPolicy.voucher_value ?? 0,
+        start_date: editingPolicy.start_date || new Date().toISOString().split('T')[0],
+        end_date: editingPolicy.end_date || "2030-12-31"
+      };
+      const res = await fetch(`${API_BASE_URL}/policies/${editingPolicy.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Lỗi lưu chính sách: " + (err?.detail || JSON.stringify(err)));
+        return;
+      }
+      setEditingPolicy(null);
+      fetchPolicies();
+    } catch (error) { alert("Lỗi kết nối khi lưu chính sách"); }
   };
 
   const handleDeletePolicy = async (id: number) => {
@@ -524,6 +557,35 @@ export default function AdminDashboard() {
                     <button onClick={handleAddPolicy} className="bg-[#1464f4] text-white px-10 py-4 rounded-xl font-bold shadow-lg">Thêm chính sách</button>
                   </div>
                </div>
+               {/* Edit Policy Modal */}
+               {editingPolicy && (
+                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                   <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl">
+                     <h3 className="text-2xl font-black mb-6">Sửa chính sách</h3>
+                     <div className="space-y-4 mb-6">
+                       <div>
+                         <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tên chính sách</label>
+                         <input className="w-full border-2 p-4 rounded-xl text-gray-900" value={editingPolicy.name} onChange={e => setEditingPolicy({...editingPolicy, name: e.target.value})} />
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                         <div>
+                           <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Giảm tiền mặt (đ)</label>
+                           <input type="number" className="w-full border-2 p-4 rounded-xl text-gray-900" value={editingPolicy.discount_amount ?? 0} onChange={e => setEditingPolicy({...editingPolicy, discount_amount: Number(e.target.value), voucher_value: 0})} />
+                         </div>
+                         <div>
+                           <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Giảm theo % (nhập số %)</label>
+                           <input type="number" className="w-full border-2 p-4 rounded-xl text-gray-900" value={editingPolicy.voucher_value ?? 0} onChange={e => setEditingPolicy({...editingPolicy, voucher_value: Number(e.target.value), discount_amount: 0})} />
+                         </div>
+                       </div>
+                     </div>
+                     <div className="flex gap-4">
+                       <button className="flex-1 bg-gray-100 p-4 rounded-xl font-bold text-gray-700" onClick={() => setEditingPolicy(null)}>Hủy</button>
+                       <button className="flex-1 bg-[#1464f4] text-white p-4 rounded-xl font-bold" onClick={handleSavePolicy}>Lưu chính sách</button>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {policies.map(p => (
                     <div key={p.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
@@ -531,7 +593,10 @@ export default function AdminDashboard() {
                          <h4 className="font-black text-lg mb-2 leading-tight">{p.name}</h4>
                          <p className="text-blue-600 font-black text-xl">{p.discount_amount > 0 ? `${formatPrice(p.discount_amount)}` : `Giảm ${p.voucher_value}%`}</p>
                        </div>
-                       <button onClick={() => handleDeletePolicy(p.id)} className="mt-6 text-red-500 font-bold text-sm text-right hover:underline">Xóa chính sách</button>
+                       <div className="mt-6 flex gap-3">
+                         <button onClick={() => setEditingPolicy(p)} className="flex-1 text-blue-500 font-bold text-sm text-center bg-blue-50 py-2 rounded-xl hover:underline">Sửa</button>
+                         <button onClick={() => handleDeletePolicy(p.id)} className="flex-1 text-red-500 font-bold text-sm text-center bg-red-50 py-2 rounded-xl hover:underline">Xóa</button>
+                       </div>
                     </div>
                   ))}
                </div>
