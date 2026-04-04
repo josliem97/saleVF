@@ -1,16 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
+from starlette.responses import Response as StarletteResponse
 
 import models
 import schemas
 import crud
 import calculator
-from database import engine, get_db
-from sqlalchemy import text # Import text for repair logic
+from database import engine, get_db, SessionLocal
 
-# Khởi tạo toàn bộ các bảng vào Database (Lưu ý: trên production thường dùng Alembic cho migration)
+# Khởi tạo toàn bộ các bảng vào Database
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -19,18 +19,55 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://sale-vf.vercel.app",
-        "https://liemvinfast.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:3001",
-    ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
+# ============================================================
+# CORS ĐỘNG - đọc domain từ bảng Sellers + whitelist cố định
+# ============================================================
+STATIC_ALLOWED_ORIGINS = [
+    "https://sale-vf.vercel.app",  # Trang chủ production
+    "http://localhost:3000",
+    "http://localhost:3001",
+]
+
+def is_origin_allowed(origin: str) -> bool:
+    """Kiểm tra origin có nằm trong whitelist hoặc database không."""
+    if origin in STATIC_ALLOWED_ORIGINS:
+        return True
+    # Tách domain từ origin (bỏ https:// hoặc http://)
+    domain = origin.replace("https://", "").replace("http://", "").split("/")[0]
+    try:
+        db = SessionLocal()
+        seller = db.query(models.Seller).filter(
+            models.Seller.domain == domain,
+            models.Seller.is_active == True
+        ).first()
+        db.close()
+        return seller is not None
+    except Exception:
+        return False
+
+@app.middleware("http")
+async def dynamic_cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin", "")
+    allowed = is_origin_allowed(origin) if origin else False
+
+    # Xử lý OPTIONS preflight
+    if request.method == "OPTIONS":
+        from starlette.responses import Response as StarletteResponse
+        response = StarletteResponse()
+        if allowed:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Max-Age"] = "600"
+        response.status_code = 204
+        return response
+
+    response = await call_next(request)
+    if allowed:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.get("/")
 def read_root():
