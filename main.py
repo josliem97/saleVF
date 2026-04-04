@@ -21,9 +21,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Thay bằng ["http://localhost:3000"] trên production
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=[
+        "https://sale-vf.vercel.app",
+        "https://liemvinfast.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:3001",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
