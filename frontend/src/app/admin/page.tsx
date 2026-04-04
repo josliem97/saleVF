@@ -381,12 +381,11 @@ export default function AdminDashboard() {
 
                    {/* Results Side (printable) */}
                    <div className="lg:col-span-8 printable-content" id="quotation-print-area">
-                      <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-lg min-h-[600px] flex flex-col">
+                      <div className="bg-white p-8 print:p-0 print:border-none print:shadow-none rounded-3xl border border-gray-200 shadow-lg min-h-[600px] print:min-h-0 flex flex-col">
                         {/* QUOTATION HEADER FOR PDF/PRINT ONLY */}
-                        <div className="hidden print:block quotation-header mb-10 w-full">
-                          <div className="flex justify-between items-center w-full">
-                             <div>
-                               <h1 className="quotation-title">BÁO GIÁ CHI TIẾT</h1>
+                        <div className="hidden print:flex quotation-header mb-6 w-full justify-between items-center border-b-[3px] border-[#1464f4] pb-4">
+                           <div>
+                               <h1 className="text-2xl font-black text-[#0a1128]">BÁO GIÁ CHI TIẾT</h1>
                                <p className="text-gray-500 font-bold">Ngày: {new Date().toLocaleDateString('vi-VN')}</p>
                                {(custName || custPhone) && (
                                  <p className="text-[#1464f4] font-black mt-2">Kính gửi: {custName} {custPhone ? `- ${custPhone}` : ''}</p>
@@ -398,19 +397,18 @@ export default function AdminDashboard() {
                               <p className="text-sm font-bold text-gray-500">Sđt: {seller?.phone || "0981 242 068"}</p>
                             </div>
                           </div>
-                        </div>
 
-                         <div className="flex justify-between items-start mb-10">
+                         <div className="flex justify-between items-start mb-6 print:mb-4">
                             <div>
                                <h3 className="text-2xl font-black text-gray-900 mb-1">{selectedCar?.name || "Chọn xe..."}</h3>
                                <p className="text-[#1464f4] font-bold text-lg">{selectedVersionName}</p>
                                <span className="bg-gray-100 px-3 py-1 rounded text-xs font-bold text-gray-500 uppercase">{selectedCar?.segment}</span>
                             </div>
-                            <img src={selectedCar?.image_url} alt="xe" className="h-32 object-contain" />
+                            <img src={selectedCar?.image_url} alt="xe" className="h-32 print:h-24 object-contain" />
                          </div>
 
-                         <div className="flex-1 space-y-4">
-                            <div className="flex justify-between pb-3 border-b border-dashed">
+                         <div className="flex-1 space-y-3 print:space-y-2">
+                            <div className="flex justify-between pb-2 border-b border-dashed">
                                <span className="text-gray-500 font-medium">Giá niêm yết:</span>
                                <span className="font-bold text-gray-800">{formatPrice(basePrice)}</span>
                             </div>
@@ -428,13 +426,13 @@ export default function AdminDashboard() {
                                  <span className="font-bold text-blue-500">-{formatPrice(vinClubDiscount)}</span>
                                </div>
                              )}
-                            <div className="flex justify-between py-4 bg-blue-50/50 px-4 rounded-xl">
+                            <div className="flex justify-between py-3 print:py-2 bg-blue-50/50 px-4 rounded-xl">
                                <span className="font-black text-[#1464f4]">GIÁ XE SAU GIẢM:</span>
                                <span className="font-black text-[#1464f4] text-xl">{formatPrice(finalPriceBeforeFees)}</span>
                             </div>
 
-                            <div className="pt-6 space-y-3">
-                               <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Chi phí lăn bánh dự tính</p>
+                            <div className="pt-4 print:pt-2 space-y-2">
+                               <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Chi phí lăn bánh dự tính</p>
                                <div className="flex justify-between text-sm"><span>Lệ phí trước bạ (0%):</span><span>{formatPrice(lanBanhRes?.thue_truoc_ba)}</span></div>
                                <div className="flex justify-between text-sm"><span>Phí biển số (Khu vực {khuVuc}):</span><span>{formatPrice(lanBanhRes?.phi_bien_so)}</span></div>
                                <div className="flex justify-between text-sm"><span>Phí đường bộ (1 năm):</span><span>{formatPrice(phiDuongBo)}</span></div>
@@ -443,9 +441,9 @@ export default function AdminDashboard() {
                             </div>
                          </div>
 
-                          <div className="mt-8 pt-6 border-t-2 border-[#1464f4] flex justify-between items-end">
+                          <div className="mt-6 print:mt-4 pt-4 border-t-2 border-[#1464f4] flex justify-between items-end">
                              <span className="text-xl font-black text-gray-900 uppercase">Tổng cộng lăn bánh:</span>
-                             <span className="text-4xl font-black text-[#1464f4] whitespace-nowrap">{formatPrice(tongLanBanh)}</span>
+                             <span className="text-3xl font-black text-[#1464f4] whitespace-nowrap">{formatPrice(tongLanBanh)}</span>
                           </div>
                           
                           <p className="mt-8 text-[9px] text-gray-400 italic text-center no-print">* Báo giá mang tính chất tham khảo tại cùng thời điểm.</p>
