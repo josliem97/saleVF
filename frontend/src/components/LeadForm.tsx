@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/lib/api';
+import { useSeller } from '@/app/SellerContext';
 
 export default function LeadForm({ defaultCarId = "" }: { defaultCarId?: string }) {
   const [cars, setCars] = useState<any[]>([]);
@@ -13,39 +14,53 @@ export default function LeadForm({ defaultCarId = "" }: { defaultCarId?: string 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const { seller } = useSeller();
+
   useEffect(() => {
     const fetchCars = async () => {
+      if (!seller?.id) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/cars/`);
+        const res = await fetch(`${API_BASE_URL}/cars/?seller_id=${seller.id}`);
         if (res.ok) {
           const data = await res.json();
           setCars(data);
           if (!formData.interested_car_id && data.length > 0) {
-            setFormData(prev => ({ ...prev, interested_car_id: data[0].id }));
+            setFormData(prev => ({ ...prev, interested_car_id: data[0].id.toString() }));
           }
         }
       } catch (err) { console.error(err); }
     };
     fetchCars();
-  }, []);
+  }, [seller?.id]); // Thêm dependency seller?.id
 
   useEffect(() => {
     if (defaultCarId) {
-       setFormData(prev => ({ ...prev, interested_car_id: defaultCarId }));
+       setFormData(prev => ({ ...prev, interested_car_id: defaultCarId.toString() }));
     }
   }, [defaultCarId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!seller) {
+      alert("Đang tải context người bán, vui lòng thử lại sau.");
+      return;
+    }
     setLoading(true);
     try {
+      const payload = {
+        ...formData,
+        seller_id: seller.id
+      };
       const res = await fetch(`${API_BASE_URL}/leads/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (res.ok) setSubmitted(true);
-      else alert("Gửi thất bại. Vui lòng kiểm tra lại thông tin.");
+      else {
+        const err = await res.json();
+        alert("Gửi thất bại. Vui lòng kiểm tra lại thông tin. (" + (err.detail || "") + ")");
+      }
     } catch (error) {
       alert("Lỗi khi gửi thông tin! Vui lòng thử lại sau.");
     }
